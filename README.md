@@ -107,7 +107,9 @@ config = PipelineConfig(
 
 - [**User Guide**](docs/USER_GUIDE.md) - Complete getting started guide
 - [**API Reference**](docs/API_REFERENCE.md) - Full API documentation
+- [**Architecture**](docs/ARCHITECTURE.md) - SDK architecture and visual diagrams
 - [**Examples**](examples/README.md) - Practical usage examples
+- [**Tests**](tests/README.md) - Test files and demonstrations
 
 ### Key Classes
 
@@ -348,14 +350,22 @@ else:
 ## 🧪 Testing
 
 ```bash
-# Run tests
-pytest
+# Run basic SDK tests
+cd tests/
+python test_sdk.py
 
-# Run tests with coverage
-pytest --cov=dtc_api_sdk
+# Run pipeline tests
+python test_native_pipeline.py
+python success_demo.py
 
-# Run specific test file
-pytest tests/test_client.py
+# Run text output investigation
+python test_text_output.py
+
+# Run comprehensive test suite
+pytest tests/
+
+# Run with coverage
+pytest --cov=dtc_api_sdk tests/
 ```
 
 ## 📈 Performance Tips
@@ -382,7 +392,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **API Documentation**: [docs/API_REFERENCE.md](docs/API_REFERENCE.md)
 - **User Guide**: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
+- **Architecture**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **Examples**: [examples/](examples/)
+- **Tests**: [tests/](tests/)
 - **PyPI Package**: [https://pypi.org/project/dtc-api-sdk/](https://pypi.org/project/dtc-api-sdk/)
 - **Issues**: [GitHub Issues](https://github.com/aparavi/dtc-api-sdk/issues)
 
