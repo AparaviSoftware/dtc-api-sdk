@@ -1,0 +1,103 @@
+{
+  "components": [
+    {
+      "id": "chat_1",
+      "provider": "chat",
+      "config": {},
+      "ui": {
+        "position": {
+          "x": -489.5,
+          "y": 126.5
+        },
+        "measured": {
+          "width": 180,
+          "height": 69
+        },
+        "data": {
+          "class": "default",
+          "type": "default"
+        },
+        "formDataValid": true
+      }
+    },
+    {
+      "id": "response_1",
+      "provider": "response",
+      "config": {
+        "lanes": []
+      },
+      "ui": {
+        "position": {
+          "x": 36,
+          "y": 118.5
+        },
+        "measured": {
+          "width": 180,
+          "height": 328
+        },
+        "data": {
+          "class": "default",
+          "type": "default"
+        },
+        "formDataValid": true,
+        "edges": [
+          {
+            "selectable": true,
+            "deletable": true,
+            "id": "xy-edge__llm_gemini_1source-answers-0-response_1target-answers-0",
+            "source": "llm_gemini_1",
+            "target": "response_1",
+            "sourceHandle": "source-answers-0",
+            "targetHandle": "target-answers-0"
+          }
+        ]
+      },
+      "input": [
+        {
+          "lane": "answers",
+          "from": "llm_gemini_1"
+        }
+      ]
+    },
+    {
+      "id": "llm_gemini_1",
+      "provider": "llm_gemini",
+      "config": {
+        "profile": "gemini-1_5-pro"
+      },
+      "ui": {
+        "position": {
+          "x": -247.92960479887083,
+          "y": 119.02085391672549
+        },
+        "measured": {
+          "width": 180,
+          "height": 90
+        },
+        "data": {
+          "class": "default",
+          "type": "default"
+        },
+        "formDataValid": false,
+        "edges": [
+          {
+            "selectable": true,
+            "deletable": true,
+            "id": "xy-edge__chat_1source-questions-0-llm_gemini_1target-questions-0",
+            "source": "chat_1",
+            "target": "llm_gemini_1",
+            "sourceHandle": "source-questions-0",
+            "targetHandle": "target-questions-0"
+          }
+        ]
+      },
+      "input": [
+        {
+          "lane": "questions",
+          "from": "chat_1"
+        }
+      ]
+    }
+  ],
+  "id": "new"
+}
