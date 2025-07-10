@@ -143,7 +143,7 @@
       "provider": "llm_gemini",
       "config": {
         "gemini-1_5-pro": {
-          "apikey": "AIzaSyD0zGSOwdH9XHMY8MpypAUt462Hyr48f6U"
+          "apikey": "test-key"
         },
         "profile": "gemini-1_5-pro"
       },
