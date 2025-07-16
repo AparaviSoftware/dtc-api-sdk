@@ -2,13 +2,14 @@
 
 A comprehensive Python SDK for the Aparavi Data Toolchain (DTC) API that provides programmatic access to document processing, data extraction, and pipeline management capabilities.
 
-## 🎯 **Start Here - Interactive Notebooks**
+## 🎯 **Start Here **
+
+**Quickstart Guide**: Get started with the DTC API SDK by following our [Quickstart Guide](QUICKSTART_GUIDE.md) for a step-by-step setup.
 
 **NEW**: Try our interactive Jupyter notebooks to learn the SDK quickly:
 
 - **📓 [SDK Doc Processing Guide](notebooks/Sample_Doc_Processing_Guide.ipynb)** - Complete walkthrough of the new `upload_file_to_webhook()` method
 - **📓 [Sample Document Processing](notebooks/Sample_Doc_Processing_Guide.ipynb)** - Real examples with different file types
-- **📓 [Process Invoice Simple](process_invoice_simple.ipynb)** - Invoice processing tutorial
 
 *Run these notebooks locally or in your favorite Jupyter environment!*
 
@@ -17,7 +18,7 @@ A comprehensive Python SDK for the Aparavi Data Toolchain (DTC) API that provide
 ```mermaid
 graph TB
     %% Client Applications
-    subgraph "Client Applications"
+    subgraph Apps ["Client Applications"]
         SDK[Python SDK]
         CLI[CLI Examples]
         WEB[Web Interface]
@@ -25,7 +26,7 @@ graph TB
     end
     
     %% SDK Components
-    subgraph "DTC API SDK"
+    subgraph SDKComp ["DTC API SDK"]
         CLIENT[DTCApiClient]
         MODELS[Data Models]
         EXCEPTIONS[Exception Handlers]
@@ -33,7 +34,7 @@ graph TB
     end
     
     %% API Endpoints
-    subgraph "DTC API Endpoints"
+    subgraph APIEnd ["DTC API Endpoints"]
         HEALTH[Health Endpoints]
         PIPE[Pipeline Management]
         TASK[Task Management]
@@ -41,32 +42,32 @@ graph TB
     end
     
     %% Specific Endpoints
-    subgraph "Health Endpoints"
+    subgraph HealthEnd ["Health Endpoints"]
         VERSION["/version"]
         STATUS["/status"]
         SERVICES["/services"]
     end
     
-    subgraph "Pipeline Management"
+    subgraph PipeMgmt ["Pipeline Management"]
         VALIDATE["/pipe/validate"]
-        CREATE["/pipe (POST)"]
-        DELETE["/pipe (DELETE)"]
+        CREATE["/pipe POST"]
+        DELETE["/pipe DELETE"]
         PROCESS["/pipe/process"]
     end
     
-    subgraph "Task Management"
-        EXECUTE["/task (PUT)"]
-        TASKSTATUS["/task (GET)"]
-        CANCEL["/task (DELETE)"]
+    subgraph TaskMgmt ["Task Management"]
+        EXECUTE["/task PUT"]
+        TASKSTATUS["/task GET"]
+        CANCEL["/task DELETE"]
     end
     
-    subgraph "User Interface"
+    subgraph UserInt ["User Interface"]
         WEBHOOK["/webhook"]
         CHAT["/chat"]
         DROPPER["/dropper"]
     end
     
-    %% Connections
+    %% Basic Connections
     SDK --> CLIENT
     CLIENT --> METHODS
     METHODS --> HEALTH
@@ -74,14 +75,14 @@ graph TB
     METHODS --> TASK
     METHODS --> UI
     
-    %% Method Mapping
-    CLIENT -.-> |execute_task()| EXECUTE
-    CLIENT -.-> |upload_file_to_webhook()| WEBHOOK
-    CLIENT -.-> |create_pipeline()| CREATE
-    CLIENT -.-> |validate_pipeline()| VALIDATE
-    CLIENT -.-> |get_version()| VERSION
-    CLIENT -.-> |get_status()| STATUS
-    CLIENT -.-> |get_services()| SERVICES
+    %% Method to Endpoint Mapping
+    CLIENT --> EXECUTE
+    CLIENT --> WEBHOOK
+    CLIENT --> CREATE
+    CLIENT --> VALIDATE
+    CLIENT --> VERSION
+    CLIENT --> STATUS
+    CLIENT --> SERVICES
 ```
 
 ## 🚀 Quick Start
