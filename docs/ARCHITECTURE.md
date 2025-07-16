@@ -19,6 +19,7 @@ graph TB
         Client --> Auth[Authentication]
         Client --> HTTP[HTTP Client]
         Client --> Retry[Retry Logic]
+        Client --> Timeout[Timeout Management]
         
         Models --> Response[APIResponse]
         Models --> Pipeline[PipelineConfig]
@@ -48,7 +49,189 @@ graph TB
     Client --> Services
 ```
 
-### API Communication Flow
+### Webhook Processing Architecture (Recommended Approach)
+
+The webhook approach is the **recommended method** for programmatic data extraction, providing direct API access to processed results without web interfaces.
+
+```mermaid
+graph TD
+    subgraph "Application Layer"
+        App[📱 Your Application]
+        SDK[🔧 DTC SDK]
+    end
+    
+    subgraph "Pipeline Creation"
+        WebhookPipe[🪝 Webhook Pipeline<br/>webhook → parse → response]
+        TaskToken[🎫 Task Token<br/>Generated ID]
+    end
+    
+    subgraph "Data Processing"
+        WebhookReceiver[📥 Webhook Receiver<br/>Accepts Base64 files]
+        ParseEngine[🔄 Parse Engine<br/>Extracts text/data]
+        ResponseFormatter[📤 Response Formatter<br/>Returns structured data]
+    end
+    
+    subgraph "Retry & Timeout Management"
+        RetryLogic[🔄 Automatic Retry<br/>3 attempts, progressive backoff]
+        TimeoutHandler[⏱️ Timeout Management<br/>60-90 seconds for processing]
+        ConnectionHandling[🔗 Connection Handling<br/>Robust error recovery]
+    end
+    
+    subgraph "Output"
+        StructuredData[📊 Structured Data<br/>JSON with extracted content]
+        ExtractedText[📄 Extracted Text<br/>Readable content]
+        Metadata[📋 File Metadata<br/>Size, type, encoding]
+    end
+    
+    App --> SDK
+    SDK --> WebhookPipe
+    WebhookPipe --> TaskToken
+    
+    SDK --> |"send_webhook(token, data)"| WebhookReceiver
+    WebhookReceiver --> ParseEngine
+    ParseEngine --> ResponseFormatter
+    
+    SDK --> RetryLogic
+    RetryLogic --> TimeoutHandler
+    TimeoutHandler --> ConnectionHandling
+    
+    ResponseFormatter --> StructuredData
+    StructuredData --> ExtractedText
+    StructuredData --> Metadata
+    
+    ExtractedText --> App
+    Metadata --> App
+```
+
+### Working Webhook Pipeline Configuration
+
+```mermaid
+graph LR
+    subgraph "Pipeline Structure"
+        PipelineWrapper["{'pipeline': {...}}"]
+        
+        subgraph "Required Components"
+            Source[source: 'webhook_1']
+            Components[components: [...]]
+            ID[id: 'webhook-processor']
+        end
+        
+        PipelineWrapper --> Source
+        PipelineWrapper --> Components
+        PipelineWrapper --> ID
+    end
+    
+    subgraph "Component Chain"
+        Webhook[🪝 webhook_1<br/>provider: webhook<br/>mode: Source]
+        Parse[🔄 parse_1<br/>provider: parse<br/>input: tags from webhook_1]
+        Response[📤 response_1<br/>provider: response<br/>input: text from parse_1]
+        
+        Webhook --> |"lane: tags"| Parse
+        Parse --> |"lane: text"| Response
+    end
+    
+    Source -.->|"references"| Webhook
+    Components --> Webhook
+    Components --> Parse
+    Components --> Response
+```
+
+## Complete Webhook Workflow Implementation
+
+### Step-by-Step Processing Flow
+
+```mermaid
+sequenceDiagram
+    participant App as Application
+    participant SDK as DTC SDK
+    participant API as DTC API
+    participant Engine as Processing Engine
+    
+    Note over App,Engine: Phase 1: Setup & Authentication
+    App->>SDK: Initialize DTCApiClient(api_key)
+    SDK->>API: Authenticate
+    API-->>SDK: ✅ Authentication Success
+    
+    Note over App,Engine: Phase 2: Pipeline Creation
+    App->>SDK: create_webhook_pipeline()
+    SDK->>API: POST /pipe (webhook→parse→response)
+    API-->>SDK: Task Token
+    
+    Note over App,Engine: Phase 3: Data Submission with Retry Logic
+    App->>SDK: send_webhook(token, file_data)
+    
+    loop Retry Logic (max 3 attempts)
+        SDK->>API: PUT /webhook?token=xxx
+        alt Success
+            API->>Engine: Start Processing
+            Engine-->>API: Processing Complete
+            API-->>SDK: ✅ Structured Results
+        else Connection/Timeout Error
+            SDK->>SDK: Wait (progressive backoff)
+            Note over SDK: Retry attempt with longer timeout
+        end
+    end
+    
+    Note over App,Engine: Phase 4: Result Processing
+    SDK->>SDK: Parse response structure
+    SDK-->>App: 📊 Extracted Data (JSON)
+    
+    Note over App,Engine: Available Data Types
+    Note over App: • Extracted text content<br/>• File metadata<br/>• Processing statistics<br/>• Structured objects
+```
+
+### Robust Error Handling & Timeout Management
+
+```mermaid
+graph TD
+    subgraph "Connection Management"
+        InitialRequest[📤 Initial Webhook Request<br/>Timeout: 60s default]
+        
+        subgraph "Error Detection"
+            ConnError[🔌 Connection Failed]
+            TimeoutError[⏰ Request Timeout]
+            ServerError[🚫 Server Error 5xx]
+            AuthError[🔐 Auth Error 401]
+        end
+        
+        subgraph "Recovery Strategy"
+            RetryDecision{Retry Possible?}
+            BackoffWait[⏳ Progressive Backoff<br/>5s → 8s → 11s]
+            TimeoutIncrease[📈 Increase Timeout<br/>60s → 90s → 120s]
+            FallbackMethod[🔄 Try Direct HTTP]
+        end
+        
+        subgraph "Final Outcomes"
+            Success[✅ Data Retrieved]
+            FinalFailure[❌ All Attempts Failed]
+            UserAction[👤 User Intervention Needed]
+        end
+    end
+    
+    InitialRequest --> ConnError
+    InitialRequest --> TimeoutError
+    InitialRequest --> ServerError
+    InitialRequest --> AuthError
+    InitialRequest --> Success
+    
+    ConnError --> RetryDecision
+    TimeoutError --> RetryDecision
+    ServerError --> RetryDecision
+    
+    RetryDecision -->|Yes, attempt < 3| BackoffWait
+    RetryDecision -->|No| FinalFailure
+    
+    BackoffWait --> TimeoutIncrease
+    TimeoutIncrease --> FallbackMethod
+    FallbackMethod --> InitialRequest
+    
+    AuthError --> UserAction
+    FinalFailure --> UserAction
+```
+
+## API Communication Flow
+
+### Enhanced Authentication & Processing Flow
 
 ```mermaid
 sequenceDiagram
@@ -61,108 +244,225 @@ sequenceDiagram
     SDK->>API: Authenticate (Bearer Token)
     API-->>SDK: Authentication Success
     
-    App->>SDK: Create Pipeline Config
-    SDK->>SDK: Validate Configuration
+    App->>SDK: Create Webhook Pipeline
+    SDK->>SDK: Build pipeline config
+    Note over SDK: {webhook_1 → parse_1 → response_1}
     SDK->>API: POST /pipe (Create Pipeline)
     API-->>SDK: Pipeline Token
     
-    App->>SDK: Upload Files
-    SDK->>API: PUT /pipe/process (Upload)
-    API->>Engine: Start Processing
-    Engine-->>API: Processing Started
-    API-->>SDK: Upload Success
+    App->>SDK: Process File (Base64 data)
+    SDK->>SDK: Prepare webhook payload
+    Note over SDK: {filename, content_type, size, data}
     
-    App->>SDK: Monitor Status
-    SDK->>API: GET /task (Status Check)
-    API-->>SDK: Task Status
+    loop Retry with Timeout Management
+        SDK->>API: PUT /webhook (with extended timeout)
+        API->>Engine: Start Processing
+        Engine->>Engine: Parse Document
+        Engine->>Engine: Extract Text & Metadata
+        Engine-->>API: Processing Complete
+        API-->>SDK: Structured Results
+    end
     
-    Engine->>Engine: Process Files
-    Engine-->>API: Processing Complete
+    SDK->>SDK: Parse Response
+    Note over SDK: Extract objects, text, metadata
+    SDK-->>App: Processed Data (JSON)
     
-    App->>SDK: Get Results
-    SDK->>API: GET /results (or webhook)
-    API-->>SDK: Processed Data
-    SDK-->>App: Parsed Text Output
+    App->>App: Use Extracted Content
+    Note over App: • Text content for analysis<br/>• Metadata for cataloging<br/>• Structured data for processing
 ```
 
 ## Pipeline Architecture
 
-### Component-Based Pipeline Structure
-
-```mermaid
-graph LR
-    subgraph "Pipeline Format"
-        PipelineWrapper["{'pipeline': {...}}"]
-        
-        subgraph "Pipeline Content"
-            Source[source: 'webhook_1']
-            Components[components: [...]]
-            ID[id: 'pipeline-id']
-        end
-        
-        PipelineWrapper --> Source
-        PipelineWrapper --> Components
-        PipelineWrapper --> ID
-    end
-    
-    subgraph "Component Structure"
-        Comp1[Component 1<br/>webhook_1]
-        Comp2[Component 2<br/>parse_1]
-        Comp3[Component 3<br/>response_1]
-        
-        Comp1 --> |"lane: tags"| Comp2
-        Comp2 --> |"lane: text"| Comp3
-    end
-    
-    Source -.->|"references"| Comp1
-    Components --> Comp1
-    Components --> Comp2
-    Components --> Comp3
-```
-
-### Webhook → Parse → Response Flow
+### Webhook-First Processing Pipeline
 
 ```mermaid
 graph TD
-    subgraph "Input"
-        File[📄 Input File<br/>PDF, DOC, TXT, etc.]
-        WebData[🌐 Webhook Data<br/>JSON payload]
+    subgraph "Input Processing"
+        File[📄 Input File<br/>PDF, DOC, TXT, Images]
+        Base64[🔢 Base64 Encoding<br/>File → Base64 string]
+        Payload[📦 Webhook Payload<br/>JSON with file data]
     end
     
     subgraph "Pipeline Components"
-        Webhook[🪝 Webhook Component<br/>id: webhook_1<br/>provider: webhook]
-        Parse[🔄 Parse Component<br/>id: parse_1<br/>provider: parse]
-        Response[📤 Response Component<br/>id: response_1<br/>provider: response]
+        Webhook[🪝 Webhook Component<br/>• id: webhook_1<br/>• provider: webhook<br/>• mode: Source<br/>• hideForm: true]
+        
+        Parse[🔄 Parse Component<br/>• id: parse_1<br/>• provider: parse<br/>• input: tags from webhook_1<br/>• Extracts text & structure]
+        
+        Response[📤 Response Component<br/>• id: response_1<br/>• provider: response<br/>• input: text from parse_1<br/>• Returns structured data]
     end
     
-    subgraph "Data Lanes"
-        TagsLane[tags lane]
-        TextLane[text lane]
-        OutputLane[output lane]
+    subgraph "Data Flow"
+        TagsLane[📋 Tags Lane<br/>File metadata & properties]
+        TextLane[📝 Text Lane<br/>Extracted content]
+        OutputLane[📊 Output Lane<br/>Final structured result]
     end
     
-    subgraph "Output"
-        ParsedText[📋 Parsed Text<br/>Extracted content]
-        Metadata[📊 Metadata<br/>File info, stats]
+    subgraph "Output Structure"
+        Objects[🗂️ Objects Dictionary<br/>Processed file data]
+        ExtractedText[📄 Extracted Text<br/>Readable content]
+        Metadata[📊 File Metadata<br/>Type, size, encoding]
+        Stats[📈 Processing Stats<br/>Objects requested/completed]
     end
     
-    File --> Webhook
-    WebData --> Webhook
+    File --> Base64
+    Base64 --> Payload
+    Payload --> Webhook
     
-    Webhook --> |tags| TagsLane
+    Webhook --> TagsLane
     TagsLane --> Parse
     
-    Parse --> |text| TextLane
+    Parse --> TextLane
     TextLane --> Response
     
-    Response --> |output| OutputLane
-    OutputLane --> ParsedText
-    OutputLane --> Metadata
+    Response --> OutputLane
+    OutputLane --> Objects
+    Objects --> ExtractedText
+    Objects --> Metadata
+    Objects --> Stats
+```
+
+### Response Data Structure
+
+```mermaid
+graph LR
+    subgraph "Webhook Response Format"
+        Root[📊 Response Object]
+        
+        subgraph "Top Level"
+            Objects[objects: {...}]
+            Types[types: {...}]
+            Requested[objectsRequested: int]
+            Completed[objectsCompleted: int]
+        end
+        
+        subgraph "Objects Content"
+            ObjectID[UUID: object-id]
+            ObjTypes[__types: {text: 'text'}]
+            ObjMeta[metadata: {...}]
+            ObjName[name: string]
+            ObjPath[path: string]
+            ObjText[text: [extracted_content]]
+        end
+        
+        Root --> Objects
+        Root --> Types
+        Root --> Requested
+        Root --> Completed
+        
+        Objects --> ObjectID
+        ObjectID --> ObjTypes
+        ObjectID --> ObjMeta
+        ObjectID --> ObjName
+        ObjectID --> ObjPath
+        ObjectID --> ObjText
+    end
+```
+
+## Production Implementation Best Practices
+
+### Timeout & Performance Configuration
+
+```mermaid
+graph TB
+    subgraph "Timeout Strategy"
+        BaseTimeout[⏱️ Base Timeout: 60s<br/>Standard processing]
+        ExtendedTimeout[⏱️ Extended: 90s<br/>Large files/complex processing]
+        MaxTimeout[⏱️ Maximum: 120s<br/>Final retry attempt]
+        
+        subgraph "File Size Considerations"
+            SmallFiles[📄 < 1MB: 60s timeout]
+            MediumFiles[📄 1-10MB: 90s timeout]
+            LargeFiles[📄 > 10MB: 120s timeout]
+        end
+        
+        BaseTimeout --> SmallFiles
+        ExtendedTimeout --> MediumFiles
+        MaxTimeout --> LargeFiles
+    end
+    
+    subgraph "Retry Configuration"
+        Attempt1[🔄 Attempt 1<br/>Standard timeout]
+        Attempt2[🔄 Attempt 2<br/>Extended timeout + 5s wait]
+        Attempt3[🔄 Attempt 3<br/>Maximum timeout + 8s wait]
+        FinalFallback[🚫 Fallback<br/>Direct HTTP attempt]
+        
+        Attempt1 --> |Fail| Attempt2
+        Attempt2 --> |Fail| Attempt3
+        Attempt3 --> |Fail| FinalFallback
+    end
+```
+
+### Production-Ready Implementation Template
+
+```python
+def create_production_webhook_pipeline():
+    """Production-ready webhook pipeline with all required components."""
+    return {
+        "pipeline": {
+            "source": "webhook_1",
+            "components": [
+                {
+                    "id": "webhook_1",
+                    "provider": "webhook",
+                    "config": {
+                        "hideForm": True,
+                        "mode": "Source",
+                        "type": "webhook"
+                    }
+                },
+                {
+                    "id": "parse_1",
+                    "provider": "parse",
+                    "config": {},
+                    "input": [
+                        {
+                            "lane": "tags",
+                            "from": "webhook_1"
+                        }
+                    ]
+                },
+                {
+                    "id": "response_1",
+                    "provider": "response",
+                    "config": {
+                        "lanes": []
+                    },
+                    "input": [
+                        {
+                            "lane": "text",
+                            "from": "parse_1"
+                        }
+                    ]
+                }
+            ],
+            "id": "production-webhook-processor"
+        }
+    }
+
+def robust_webhook_processing(client, task_token, file_data, max_retries=3):
+    """Production webhook processing with comprehensive error handling."""
+    for attempt in range(max_retries):
+        try:
+            # Progressive timeout increase
+            timeout = 60 + (attempt * 30)  # 60s, 90s, 120s
+            client.timeout = timeout
+            
+            response = client.send_webhook(task_token, file_data)
+            
+            # Parse and return structured data
+            return extract_structured_data(response)
+            
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait_time = 5 + (attempt * 3)  # Progressive backoff
+                time.sleep(wait_time)
+            else:
+                raise Exception(f"All webhook attempts failed: {e}")
 ```
 
 ## SDK Component Relationships
 
-### Class Hierarchy
+### Enhanced Class Hierarchy
 
 ```mermaid
 classDiagram
@@ -170,6 +470,7 @@ classDiagram
         +api_key: str
         +base_url: str
         +timeout: int
+        +max_retries: int
         +session: Session
         +get_version()
         +get_status()
@@ -177,14 +478,15 @@ classDiagram
         +execute_task()
         +upload_files()
         +send_webhook()
+        +robust_webhook_call()
     }
     
-    class PipelineConfig {
+    class WebhookPipeline {
         +source: str
-        +transformations: List[str]
-        +destination: str
-        +settings: Dict
-        +to_dict()
+        +components: List[Component]
+        +pipeline_id: str
+        +create_webhook_config()
+        +validate_pipeline()
     }
     
     class APIResponse {
@@ -192,6 +494,9 @@ classDiagram
         +data: Dict
         +error: Dict
         +metrics: Dict
+        +objects: Dict
+        +extracted_text: str
+        +metadata: Dict
         +is_success: bool
         +error_message: str
     }
@@ -202,12 +507,23 @@ classDiagram
         +name: str
         +progress: float
         +result: Dict
+        +processing_time: float
+    }
+    
+    class RetryManager {
+        +max_attempts: int
+        +base_timeout: int
+        +backoff_strategy: str
+        +execute_with_retry()
+        +calculate_timeout()
+        +handle_failure()
     }
     
     class DTCApiError {
         +message: str
         +status_code: int
         +response_data: dict
+        +retry_recommended: bool
     }
     
     DTCApiError <|-- AuthenticationError
@@ -215,232 +531,74 @@ classDiagram
     DTCApiError <|-- PipelineError
     DTCApiError <|-- TaskError
     DTCApiError <|-- NetworkError
+    DTCApiError <|-- TimeoutError
     
-    DTCApiClient --> PipelineConfig
+    DTCApiClient --> WebhookPipeline
     DTCApiClient --> APIResponse
     DTCApiClient --> TaskInfo
+    DTCApiClient --> RetryManager
     DTCApiClient --> DTCApiError
 ```
 
-### API Endpoint Mapping
+## Key Advantages of Webhook Approach
+
+### Why Webhook Processing is Recommended
 
 ```mermaid
 graph TB
-    subgraph "SDK Methods"
-        GetVersion[get_version()]
-        GetStatus[get_status()]
-        CreatePipe[create_pipeline()]
-        DeletePipe[delete_pipeline()]
-        ValidatePipe[validate_pipeline()]
-        UploadFiles[upload_files()]
-        ExecTask[execute_task()]
-        GetTaskStatus[get_task_status()]
-        CancelTask[cancel_task()]
-        SendWebhook[send_webhook()]
-        GetServices[get_services()]
-    end
-    
-    subgraph "API Endpoints"
-        VersionEP[GET /version]
-        StatusEP[GET /status]
-        CreateEP[POST /pipe]
-        DeleteEP[DELETE /pipe]
-        ValidateEP[POST /pipe/validate]
-        UploadEP[PUT /pipe/process]
-        TaskEP[PUT /task]
-        TaskStatusEP[GET /task]
-        TaskCancelEP[DELETE /task]
-        WebhookEP[PUT /webhook]
-        ServicesEP[GET /services]
-    end
-    
-    GetVersion --> VersionEP
-    GetStatus --> StatusEP
-    CreatePipe --> CreateEP
-    DeletePipe --> DeleteEP
-    ValidatePipe --> ValidateEP
-    UploadFiles --> UploadEP
-    ExecTask --> TaskEP
-    GetTaskStatus --> TaskStatusEP
-    CancelTask --> TaskCancelEP
-    SendWebhook --> WebhookEP
-    GetServices --> ServicesEP
-```
-
-## Data Flow Architecture
-
-### Complete Processing Workflow
-
-```mermaid
-graph TD
-    subgraph "Client Application"
-        App[📱 Your Application]
-        SDK[🔧 DTC SDK]
-    end
-    
-    subgraph "DTC API Layer"
-        Auth[🔐 Authentication]
-        Validation[✅ Validation]
-        PipelineAPI[🔄 Pipeline API]
-        TaskAPI[⚙️ Task API]
-    end
-    
-    subgraph "Processing Engine"
-        Webhook[🪝 Webhook Receiver]
-        Parser[📄 Parse Engine]
-        AI[🤖 AI/ML Components]
-        Storage[💾 Result Storage]
-    end
-    
-    subgraph "Output Channels"
-        DirectResult[📊 Direct Results]
-        WebhookCallback[🔔 Webhook Callbacks]
-        UIInterfaces[🖥️ UI Interfaces]
-    end
-    
-    App --> SDK
-    SDK --> Auth
-    Auth --> Validation
-    Validation --> PipelineAPI
-    Validation --> TaskAPI
-    
-    PipelineAPI --> Webhook
-    TaskAPI --> Parser
-    
-    Webhook --> Parser
-    Parser --> AI
-    AI --> Storage
-    
-    Storage --> DirectResult
-    Storage --> WebhookCallback
-    Storage --> UIInterfaces
-    
-    DirectResult --> SDK
-    WebhookCallback --> App
-    UIInterfaces --> App
-```
-
-### Error Handling Flow
-
-```mermaid
-graph TD
-    subgraph "SDK Error Handling"
-        Request[API Request]
-        Response[API Response]
+    subgraph "Traditional Approach Limitations"
+        FileUpload[📁 File Upload Approach]
+        WebInterface[🌐 Web Interface Results]
+        ManualRetrieval[👤 Manual Result Retrieval]
         
-        subgraph "Error Types"
-            AuthError[401: AuthenticationError]
-            ValidError[422: ValidationError]
-            ServerError[500: DTCApiError]
-            NetworkError[Timeout: NetworkError]
-        end
+        FileUpload --> WebInterface
+        WebInterface --> ManualRetrieval
+    end
+    
+    subgraph "Webhook Approach Benefits"
+        DirectAPI[🔌 Direct API Integration]
+        ProgrammaticAccess[💻 Programmatic Access]
+        StructuredResults[📊 Structured Results]
+        AutomatedWorkflow[🤖 Automated Workflow]
+        RobustErrorHandling[🛡️ Robust Error Handling]
         
-        subgraph "Recovery Actions"
-            Retry[Automatic Retry]
-            UserNotify[User Notification]
-            Fallback[Fallback Logic]
-        end
+        DirectAPI --> ProgrammaticAccess
+        ProgrammaticAccess --> StructuredResults
+        StructuredResults --> AutomatedWorkflow
+        AutomatedWorkflow --> RobustErrorHandling
     end
     
-    Request --> Response
-    Response --> |"Check Status"| AuthError
-    Response --> ValidError
-    Response --> ServerError
-    Response --> NetworkError
-    
-    AuthError --> UserNotify
-    ValidError --> UserNotify
-    ServerError --> Retry
-    NetworkError --> Retry
-    
-    Retry --> |"Max retries"| Fallback
-    Fallback --> UserNotify
+    subgraph "Production Benefits"
+        Scalability[📈 Scalable Processing]
+        Integration[🔗 Easy Integration]
+        Monitoring[📊 Built-in Monitoring]
+        ErrorRecovery[🔄 Automatic Recovery]
+        
+        RobustErrorHandling --> Scalability
+        RobustErrorHandling --> Integration
+        RobustErrorHandling --> Monitoring
+        RobustErrorHandling --> ErrorRecovery
+    end
 ```
 
-## Deployment Architecture
+### Performance Characteristics
 
-### SDK Integration Patterns
-
-```mermaid
-graph TB
-    subgraph "Development Environment"
-        DevApp[Development App]
-        DevSDK[DTC SDK]
-        DevAPI[Dev API<br/>eaas-dev.aparavi.com]
-    end
-    
-    subgraph "Production Environment"
-        ProdApp[Production App]
-        ProdSDK[DTC SDK]
-        ProdAPI[Prod API<br/>api.aparavi.com]
-    end
-    
-    subgraph "Integration Patterns"
-        BatchJob[📦 Batch Processing]
-        RealTime[⚡ Real-time Processing]
-        WebApp[🌐 Web Application]
-        CLI[💻 CLI Tools]
-    end
-    
-    DevApp --> DevSDK
-    DevSDK --> DevAPI
-    
-    ProdApp --> ProdSDK
-    ProdSDK --> ProdAPI
-    
-    BatchJob -.-> ProdSDK
-    RealTime -.-> ProdSDK
-    WebApp -.-> ProdSDK
-    CLI -.-> ProdSDK
-```
-
-## Configuration Architecture
-
-### Environment-Based Configuration
-
-```mermaid
-graph LR
-    subgraph "Configuration Sources"
-        EnvVars[🔧 Environment Variables<br/>DTC_API_KEY<br/>DTC_BASE_URL<br/>DTC_TIMEOUT]
-        ConfigFile[📄 Config Files<br/>config.json<br/>.env]
-        DirectParams[⚙️ Direct Parameters<br/>DTCApiClient(api_key=...)]
-    end
-    
-    subgraph "SDK Configuration"
-        Client[DTCApiClient]
-        Auth[Authentication]
-        Network[Network Settings]
-        Retry[Retry Policy]
-    end
-    
-    subgraph "Pipeline Configuration"
-        Source[Source Definition]
-        Components[Component Array]
-        Settings[Processing Settings]
-    end
-    
-    EnvVars --> Client
-    ConfigFile --> Client
-    DirectParams --> Client
-    
-    Client --> Auth
-    Client --> Network
-    Client --> Retry
-    
-    Source --> Components
-    Components --> Settings
-```
+- **Timeout Management**: 60-120 seconds based on file size and complexity
+- **Retry Logic**: 3 attempts with progressive backoff (5s, 8s, 11s)
+- **Connection Handling**: Automatic recovery from network issues
+- **Memory Efficiency**: Streaming base64 encoding for large files
+- **Error Transparency**: Detailed error reporting for debugging
 
 ---
 
 ## Summary
 
-The DTC API SDK provides a clean, well-structured interface to the Aparavi Data Toolchain API with:
+The DTC API SDK provides a **production-ready webhook processing architecture** that eliminates the need for web interfaces and provides direct programmatic access to extracted data. Key features include:
 
-- **Robust Architecture**: Component-based design with proper error handling
-- **Flexible Configuration**: Multiple ways to configure pipelines and processing
-- **Complete API Coverage**: All endpoints supported with type-safe interfaces
-- **Production Ready**: Built-in retry logic, authentication, and error recovery
-- **Developer Friendly**: Comprehensive documentation and examples
+- **Complete Webhook Integration**: webhook → parse → response pipeline pattern
+- **Robust Error Handling**: Automatic retry with progressive timeouts
+- **Structured Data Output**: JSON responses with extracted text, metadata, and statistics
+- **Production Ready**: Built-in timeout management, connection recovery, and comprehensive error handling
+- **Developer Friendly**: No web interfaces required - pure API-driven workflow
 
-The architecture supports both simple one-off tasks and complex multi-component pipelines for processing various data types through webhook → parse → response workflows. 
+The webhook approach is the **recommended method** for all production integrations, providing reliable, scalable, and fully automated document processing capabilities. 

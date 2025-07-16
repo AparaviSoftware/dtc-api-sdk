@@ -20,6 +20,14 @@ class TaskStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
+    UNKNOWN = "unknown"
+    
+    @classmethod
+    def _missing_(cls, value):
+        """Handle missing/unknown status values."""
+        if value == "":
+            return cls.UNKNOWN
+        return cls.UNKNOWN
 
 
 @dataclass

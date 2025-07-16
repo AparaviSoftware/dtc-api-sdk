@@ -1,0 +1,112 @@
+{
+  "components": [
+    {
+      "id": "webhook_1",
+      "provider": "webhook",
+      "config": {
+        "hideForm": true,
+        "mode": "Source",
+        "type": "webhook"
+      },
+      "ui": {
+        "position": {
+          "x": -132.5,
+          "y": 303
+        },
+        "measured": {
+          "width": 140,
+          "height": 116
+        },
+        "data": {
+          "class": "source",
+          "type": "default"
+        },
+        "formDataValid": true
+      }
+    },
+    {
+      "id": "parse_1",
+      "provider": "parse",
+      "config": {},
+      "ui": {
+        "position": {
+          "x": 75.5,
+          "y": 248.5
+        },
+        "measured": {
+          "width": 140,
+          "height": 116
+        },
+        "data": {
+          "class": "data",
+          "type": "default"
+        },
+        "formDataValid": true,
+        "edges": [
+          {
+            "source": "webhook_1",
+            "sourceHandle": "source-tags-0",
+            "target": "parse_1",
+            "targetHandle": "target-tags-0",
+            "id": "xy-edge__webhook_1source-tags-0-parse_1target-tags-0"
+          }
+        ]
+      },
+      "input": [
+        {
+          "lane": "tags",
+          "from": "webhook_1"
+        }
+      ]
+    },
+    {
+      "id": "response_1",
+      "provider": "response",
+      "config": {
+        "lanes": []
+      },
+      "ui": {
+        "position": {
+          "x": 271.5,
+          "y": 257
+        },
+        "measured": {
+          "width": 140,
+          "height": 256
+        },
+        "data": {
+          "class": "infrastructure",
+          "type": "default"
+        },
+        "formDataValid": false,
+        "edges": [
+          {
+            "source": "parse_1",
+            "sourceHandle": "source-text-0",
+            "target": "response_1",
+            "targetHandle": "target-text-6",
+            "id": "xy-edge__parse_1source-text-0-response_1target-text-6"
+          },
+          {
+            "source": "webhook_1",
+            "sourceHandle": "source-text-0",
+            "target": "response_1",
+            "targetHandle": "target-text-6",
+            "id": "xy-edge__webhook_1source-text-0-response_1target-text-6"
+          }
+        ]
+      },
+      "input": [
+        {
+          "lane": "text",
+          "from": "parse_1"
+        },
+        {
+          "lane": "text",
+          "from": "webhook_1"
+        }
+      ]
+    }
+  ],
+  "id": "new"
+}

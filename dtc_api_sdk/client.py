@@ -234,10 +234,19 @@ class DTCApiClient:
         
         response = self._make_request("POST", "/pipe", params=params, data=config_dict)
         
-        if not response.data or "token" not in response.data:
-            raise PipelineError("Pipeline creation failed: no token returned")
-            
-        return response.data["token"]
+        # Handle both dict and string responses
+        if isinstance(response.data, dict):
+            if not response.data or "token" not in response.data:
+                raise PipelineError("Pipeline creation failed: no token returned")
+            return response.data["token"]
+        elif isinstance(response.data, str):
+            # If response is a string, try to parse it as a token
+            if response.data and len(response.data.strip()) > 0:
+                return response.data.strip()
+            else:
+                raise PipelineError("Pipeline creation failed: empty response")
+        else:
+            raise PipelineError(f"Pipeline creation failed: unexpected response type {type(response.data)}")
     
     def delete_pipeline(self, token: str) -> bool:
         """
@@ -335,10 +344,19 @@ class DTCApiClient:
             
         response = self._make_request("PUT", "/task", params=params, data=config_dict)
         
-        if not response.data or "token" not in response.data:
-            raise TaskError("Task execution failed: no token returned")
-            
-        return response.data["token"]
+        # Handle both dict and string responses
+        if isinstance(response.data, dict):
+            if not response.data or "token" not in response.data:
+                raise TaskError("Task execution failed: no token returned")
+            return response.data["token"]
+        elif isinstance(response.data, str):
+            # If response is a string, try to parse it as a token
+            if response.data and len(response.data.strip()) > 0:
+                return response.data.strip()
+            else:
+                raise TaskError("Task execution failed: empty response")
+        else:
+            raise TaskError(f"Task execution failed: unexpected response type {type(response.data)}")
     
     def get_task_status(self, token: str) -> TaskInfo:
         """
@@ -353,7 +371,13 @@ class DTCApiClient:
         params = {"token": token}
         response = self._make_request("GET", "/task", params=params)
         
-        data = response.data or {}
+        # Handle both dict and string responses
+        if isinstance(response.data, dict):
+            data = response.data
+        else:
+            # If response is not a dict, create a basic structure
+            data = {"status": "unknown", "error_message": f"Unexpected response: {response.data}"}
+            
         return TaskInfo(
             token=token,
             status=TaskStatus(data.get("status", "pending")),
@@ -428,7 +452,13 @@ class DTCApiClient:
         """
         params = {"token": token}
         response = self._make_request("PUT", "/webhook", params=params, data=webhook_data)
-        return response.data
+        
+        # Handle both dict and string responses
+        if isinstance(response.data, dict):
+            return response.data
+        else:
+            # If response is not a dict, wrap it in a dict
+            return {"response": response.data, "status": "received"}
     
     def get_chat_url(self, token: str, pipeline_type: str, api_key: str = None) -> str:
         """

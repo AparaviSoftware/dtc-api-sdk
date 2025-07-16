@@ -1,410 +1,327 @@
-# Aparavi Data Toolchain API SDK
+# DTC API SDK
 
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![PyPI Version](https://img.shields.io/pypi/v/dtc-api-sdk.svg)](https://pypi.org/project/dtc-api-sdk/)
+A Python SDK for the Aparavi Data Toolchain (DTC) API that provides programmatic access to document processing and data extraction capabilities.
 
-Python SDK for the Aparavi Data Toolchain API - a powerful platform for automated data processing, document analysis, and intelligent content extraction.
+## 🚀 Quick Start - Webhook Processing (Recommended)
 
-## 🚀 Features
+The **webhook approach** is the recommended method for programmatic data extraction, providing direct API access to processed results without web interfaces.
 
-- **Simple & Intuitive**: Easy-to-use Python interface for complex data processing workflows
-- **Comprehensive**: Full coverage of all DTC API endpoints and features
-- **Robust**: Built-in error handling, retries, and connection management
-- **Flexible**: Support for both one-off tasks and persistent pipelines
-- **Concurrent**: Batch processing and concurrent task execution
-- **Well-Documented**: Extensive documentation and practical examples
+```python
+import os
+import base64
+from dtc_api_sdk import DTCApiClient
+
+# Initialize client
+os.environ["DTC_API_KEY"] = "your-api-key-here"
+client = DTCApiClient()
+
+# Create webhook pipeline for document processing
+def create_webhook_pipeline():
+    return {
+        "pipeline": {
+            "source": "webhook_1",
+            "components": [
+                {
+                    "id": "webhook_1",
+                    "provider": "webhook",
+                    "config": {"hideForm": True, "mode": "Source", "type": "webhook"}
+                },
+                {
+                    "id": "parse_1",
+                    "provider": "parse",
+                    "config": {},
+                    "input": [{"lane": "tags", "from": "webhook_1"}]
+                },
+                {
+                    "id": "response_1",
+                    "provider": "response",
+                    "config": {"lanes": []},
+                    "input": [{"lane": "text", "from": "parse_1"}]
+                }
+            ],
+            "id": "webhook-processor"
+        }
+    }
+
+# Process any document and get structured results
+def process_document(file_path):
+    # Create processing pipeline
+    pipeline = create_webhook_pipeline()
+    task_token = client.execute_task(pipeline, name="document-processor")
+    
+    # Prepare file data
+    with open(file_path, 'rb') as f:
+        file_content = f.read()
+    
+    webhook_data = {
+        "filename": os.path.basename(file_path),
+        "content_type": "application/pdf",  # or appropriate MIME type
+        "size": len(file_content),
+        "data": base64.b64encode(file_content).decode('utf-8')
+    }
+    
+    # Send for processing with retry logic
+    response = client.send_webhook(task_token, webhook_data)
+    
+    # Extract structured data
+    if 'objects' in response:
+        for obj_id, obj_data in response['objects'].items():
+            if 'text' in obj_data:
+                # Access extracted text content
+                extracted_content = obj_data['text']
+                print(f"Extracted content: {extracted_content}")
+            
+            if 'metadata' in obj_data:
+                # Access file metadata
+                metadata = obj_data['metadata']
+                print(f"File metadata: {metadata}")
+    
+    return response
+
+# Process your document
+results = process_document("path/to/your/document.pdf")
+```
+
+## ✨ Key Features
+
+- **🪝 Webhook Processing**: Direct API integration with structured JSON responses
+- **📄 Multi-Format Support**: PDF, DOC, TXT, images, and more
+- **🔄 Robust Error Handling**: Automatic retry with progressive timeouts
+- **📊 Structured Output**: Extracted text, metadata, and processing statistics
+- **🛡️ Production Ready**: Built-in timeout management and connection recovery
+- **💻 Pure API Workflow**: No web interfaces required
+
+## 🏗️ Architecture Overview
+
+The SDK uses a **webhook → parse → response** pipeline pattern for optimal performance:
+
+```
+📄 Document → 🪝 Webhook → 🔄 Parse → 📤 Response → 📊 Structured Data
+```
+
+### Webhook Processing Benefits
+
+- **Direct API Access**: Get results programmatically in your code
+- **Automatic Retry**: Built-in retry logic with progressive backoff
+- **Timeout Management**: Smart timeout handling (60-120s based on file size)
+- **Error Recovery**: Robust connection handling and error recovery
+- **Structured Results**: JSON responses with extracted content and metadata
 
 ## 📦 Installation
-
-### Requirements
-
-- Python 3.8 or higher
-- Valid DTC API key
-
-### Install from PyPI
 
 ```bash
 pip install dtc-api-sdk
 ```
 
-### Install from Source
+Or for development:
 
 ```bash
-git clone https://github.com/aparavi/dtc-api-sdk.git
+git clone https://github.com/your-org/dtc-api-sdk.git
 cd dtc-api-sdk
 pip install -e .
 ```
 
-## 🏃 Quick Start
+## 🔧 Configuration
 
-### 1. Set up your API key
+### Environment Variables (Recommended)
 
 ```bash
-export DTC_API_KEY="your_api_key_here"
+export DTC_API_KEY="your-api-key-here"
+export DTC_BASE_URL="https://eaas-dev.aparavi.com"  # Optional, defaults to dev
 ```
 
-### 2. Basic Usage
+### Direct Configuration
 
 ```python
-from dtc_api_sdk import DTCApiClient, PipelineConfig
+from dtc_api_sdk import DTCApiClient
 
-# Initialize client
-client = DTCApiClient()
+client = DTCApiClient(
+    api_key="your-api-key-here",
+    base_url="https://eaas-dev.aparavi.com",
+    timeout=90  # seconds
+)
+```
 
-# Test connection
-version = client.get_version()
-print(f"Connected to DTC API v{version}")
+## 🔍 Advanced Usage
 
-# Create a simple configuration
-config = PipelineConfig(
-    source="s3://my-bucket/documents",
-    transformations=["extract_text", "analyze_content", "classify_documents"],
-    destination="s3://my-bucket/processed",
-    settings={
-        "text_extraction": {"ocr_enabled": True},
-        "classification": {"categories": ["invoice", "contract", "report"]}
+### Processing with Custom Configuration
+
+```python
+import time
+from pathlib import Path
+
+def robust_document_processing(file_path, max_retries=3):
+    """Process document with comprehensive error handling."""
+    client = DTCApiClient()
+    
+    for attempt in range(max_retries):
+        try:
+            # Progressive timeout increase for larger files
+            file_size = Path(file_path).stat().st_size
+            timeout = 60 if file_size < 1_000_000 else 90 if file_size < 10_000_000 else 120
+            client.timeout = timeout
+            
+            # Create and execute pipeline
+            pipeline = create_webhook_pipeline()
+            task_token = client.execute_task(pipeline, name=f"process_{Path(file_path).stem}")
+            
+            # Prepare and send data
+            with open(file_path, 'rb') as f:
+                file_content = f.read()
+            
+            webhook_data = {
+                "filename": Path(file_path).name,
+                "content_type": get_mime_type(file_path),
+                "size": len(file_content),
+                "data": base64.b64encode(file_content).decode('utf-8')
+            }
+            
+            response = client.send_webhook(task_token, webhook_data)
+            
+            # Parse and return results
+            return parse_webhook_response(response)
+            
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait_time = 5 + (attempt * 3)  # Progressive backoff
+                print(f"Attempt {attempt + 1} failed: {e}. Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                raise Exception(f"All processing attempts failed: {e}")
+
+def parse_webhook_response(response):
+    """Extract structured data from webhook response."""
+    results = {
+        "extracted_text": "",
+        "metadata": {},
+        "processing_stats": {
+            "objects_requested": response.get("objectsRequested", 0),
+            "objects_completed": response.get("objectsCompleted", 0)
+        }
     }
-)
-
-# Execute a task
-token = client.execute_task(config, name="document_processing")
-print(f"Task started: {token}")
-
-# Wait for completion
-result = client.wait_for_task(token)
-print(f"Task completed: {result.status}")
-```
-
-## 🎯 Core Concepts
-
-### Tasks vs Pipelines
-
-**Tasks** (Recommended for most use cases):
-- One-off execution
-- Automatic cleanup
-- Perfect for batch processing
-
-**Pipelines** (For continuous processing):
-- Persistent and reusable
-- Multiple file uploads
-- Manual lifecycle management
-
-### Configuration Structure
-
-```python
-config = PipelineConfig(
-    source="data_source",              # Where data comes from
-    transformations=["step1", "step2"], # Processing steps
-    destination="output_location",     # Where results go
-    settings={"key": "value"}         # Additional settings
-)
-```
-
-## 📚 Documentation
-
-### Core Documentation
-
-- [**User Guide**](docs/USER_GUIDE.md) - Complete getting started guide
-- [**API Reference**](docs/API_REFERENCE.md) - Full API documentation
-- [**Architecture**](docs/ARCHITECTURE.md) - SDK architecture and visual diagrams
-- [**Examples**](examples/README.md) - Practical usage examples
-- [**Tests**](tests/README.md) - Test files and demonstrations
-
-### Key Classes
-
-- **`DTCApiClient`** - Main client for API interaction
-- **`PipelineConfig`** - Configuration for processing pipelines
-- **`TaskInfo`** - Task status and progress information
-- **`APIResponse`** - Standardized API response format
-
-## 🔧 Examples
-
-### Document Processing
-
-```python
-from dtc_api_sdk import DTCApiClient, PipelineConfig
-
-client = DTCApiClient()
-
-config = PipelineConfig(
-    source="s3://documents/legal",
-    transformations=["extract_text", "legal_analysis", "compliance_check"],
-    destination="s3://processed/legal",
-    settings={
-        "legal_analysis": {"extract_clauses": True},
-        "compliance": {"regulations": ["GDPR", "CCPA"]}
-    }
-)
-
-token = client.execute_task(config, name="legal_document_analysis")
-result = client.wait_for_task(token)
-```
-
-### File Upload Processing
-
-```python
-# Create pipeline for file uploads
-config = PipelineConfig(
-    source="file_upload",
-    transformations=["extract_text", "analyze_content"],
-    destination="s3://processed/output"
-)
-
-pipeline_token = client.create_pipeline(config)
-
-# Upload files
-files = ["document1.pdf", "document2.docx", "image.png"]
-client.upload_files(pipeline_token, files)
-
-# Clean up
-client.delete_pipeline(pipeline_token)
+    
+    if 'objects' in response:
+        for obj_id, obj_data in response['objects'].items():
+            if 'text' in obj_data and obj_data['text']:
+                # Extract text content
+                text_content = obj_data['text'][0] if isinstance(obj_data['text'], list) else obj_data['text']
+                results["extracted_text"] = text_content
+            
+            if 'metadata' in obj_data:
+                results["metadata"] = obj_data['metadata']
+    
+    return results
 ```
 
 ### Batch Processing
 
 ```python
-# Process multiple datasets concurrently
-datasets = ["dataset1", "dataset2", "dataset3"]
-tokens = []
+def process_multiple_documents(file_paths):
+    """Process multiple documents efficiently."""
+    results = {}
+    
+    for file_path in file_paths:
+        try:
+            print(f"Processing: {file_path}")
+            result = robust_document_processing(file_path)
+            results[file_path] = result
+            print(f"✅ Completed: {file_path}")
+        except Exception as e:
+            print(f"❌ Failed: {file_path} - {e}")
+            results[file_path] = {"error": str(e)}
+    
+    return results
 
-for dataset in datasets:
-    config = PipelineConfig(
-        source=f"s3://data/{dataset}",
-        transformations=["analyze", "summarize"],
-        destination=f"s3://results/{dataset}"
-    )
-    token = client.execute_task(config, name=f"process_{dataset}")
-    tokens.append(token)
-
-# Wait for all to complete
-results = []
-for token in tokens:
-    result = client.wait_for_task(token)
-    results.append(result)
+# Process multiple files
+file_list = ["doc1.pdf", "doc2.docx", "doc3.txt"]
+batch_results = process_multiple_documents(file_list)
 ```
 
-### Command Line Interface
+## 📚 API Reference
 
-```bash
-# Check API status
-python -m dtc_api_sdk.examples.cli_example status
+### Core Methods
 
-# Submit a task
-python -m dtc_api_sdk.examples.cli_example submit --config config.json
+#### `DTCApiClient`
 
-# Monitor progress
-python -m dtc_api_sdk.examples.cli_example monitor --token abc123 --wait
-```
+- `get_version()` - Get API version information
+- `get_status()` - Check API health status
+- `execute_task(pipeline, name=None)` - Create processing pipeline and get task token
+- `send_webhook(task_token, data)` - Send data for processing via webhook
+- `get_task_status(task_token)` - Check processing status
+- `cancel_task(task_token)` - Cancel running task
 
-## 🛠️ Advanced Features
+#### Pipeline Management
+
+- `create_pipeline(config)` - Create custom pipeline
+- `validate_pipeline(config)` - Validate pipeline configuration
+- `delete_pipeline(pipeline_id)` - Remove pipeline
 
 ### Error Handling
 
+The SDK provides comprehensive error handling:
+
 ```python
-from dtc_api_sdk.exceptions import DTCApiError, AuthenticationError
+from dtc_api_sdk.exceptions import (
+    DTCApiError,
+    AuthenticationError,
+    ValidationError,
+    NetworkError,
+    TimeoutError
+)
 
 try:
-    client = DTCApiClient()
-    token = client.execute_task(config)
+    response = client.send_webhook(task_token, data)
 except AuthenticationError:
-    print("Check your API key")
+    print("Invalid API key or authentication failed")
+except TimeoutError:
+    print("Processing timeout - try increasing timeout value")
+except NetworkError:
+    print("Network connectivity issue")
+except ValidationError as e:
+    print(f"Invalid data or configuration: {e}")
 except DTCApiError as e:
-    print(f"API error: {e}")
-    print(f"Status code: {e.status_code}")
+    print(f"General API error: {e}")
 ```
 
-### Webhook Integration
+## 🧪 Examples
 
-```python
-# Configure webhook-enabled task
-config = PipelineConfig(
-    source="webhook_input",
-    transformations=["real_time_processing"],
-    settings={
-        "webhook": {
-            "callback_url": "https://your-app.com/webhook",
-            "events": ["processing_complete", "error_occurred"]
-        }
-    }
-)
+Comprehensive examples are available in the `examples/` directory:
 
-token = client.execute_task(config)
+- `examples/basic_usage.py` - Simple document processing
+- `examples/async_processing.py` - Asynchronous processing patterns
+- `examples/file_processing.py` - File handling utilities
+- `examples/cli_example.py` - Command-line interface
 
-# Send webhook data
-webhook_data = {"event": "data_received", "data": {...}}
-client.send_webhook(token, webhook_data)
-```
+## 🔗 Related Documentation
 
-### UI Integration
-
-```python
-# Get URLs for integrated UI components
-chat_url = client.get_chat_url(token, "document_processing")
-dropper_url = client.get_dropper_url(token, "file_upload")
-```
-
-## 🎨 Configuration Examples
-
-### Image Processing
-
-```python
-config = PipelineConfig(
-    source="s3://images/input",
-    transformations=["ocr", "image_analysis", "text_extraction"],
-    settings={
-        "ocr": {"languages": ["eng", "fra"], "dpi": 300},
-        "image_analysis": {"detect_objects": True}
-    }
-)
-```
-
-### Data Analysis
-
-```python
-config = PipelineConfig(
-    source="s3://data/csv",
-    transformations=["data_validation", "statistical_analysis"],
-    settings={
-        "validation": {"check_nulls": True, "outlier_detection": True},
-        "analysis": {"correlation_matrix": True}
-    }
-)
-```
-
-### Email Processing
-
-```python
-config = PipelineConfig(
-    source="s3://email/archives",
-    transformations=["parse_email", "thread_analysis", "pii_detection"],
-    settings={
-        "parsing": {"extract_attachments": True},
-        "pii": {"mask_sensitive_data": True}
-    }
-)
-```
-
-## 🚀 Available Transformations
-
-### Text Processing
-- `extract_text` - Extract text from documents
-- `clean_text` - Clean and normalize text
-- `analyze_content` - Content analysis and insights
-- `sentiment_analysis` - Sentiment detection
-- `extract_entities` - Named entity recognition
-
-### Document Processing
-- `classify_documents` - Document classification
-- `extract_metadata` - Metadata extraction
-- `split_documents` - Document splitting
-- `merge_documents` - Document merging
-- `convert_format` - Format conversion
-
-### Image Processing
-- `ocr` - Optical character recognition
-- `image_enhancement` - Image quality improvement
-- `object_detection` - Object detection
-- `face_recognition` - Face recognition
-- `image_classification` - Image classification
-
-### Data Processing
-- `data_validation` - Data quality checks
-- `statistical_analysis` - Statistical analysis
-- `data_transformation` - Data transformation
-- `deduplication` - Remove duplicates
-- `data_enrichment` - Data enrichment
-
-## 🔒 Security & Best Practices
-
-### Environment Variables
-
-```bash
-export DTC_API_KEY="your_api_key_here"
-export DTC_BASE_URL="https://api.aparavi.com"  # Production
-export DTC_TIMEOUT="60"
-export DTC_MAX_RETRIES="3"
-```
-
-### Resource Management
-
-```python
-# Always clean up pipelines
-pipeline_token = client.create_pipeline(config)
-try:
-    client.upload_files(pipeline_token, files)
-finally:
-    client.delete_pipeline(pipeline_token)
-```
-
-### Configuration Validation
-
-```python
-# Validate before execution
-if client.validate_pipeline(config):
-    token = client.execute_task(config)
-else:
-    print("Configuration is invalid")
-```
-
-## 🧪 Testing
-
-```bash
-# Run basic SDK tests
-cd tests/
-python test_sdk.py
-
-# Run pipeline tests
-python test_native_pipeline.py
-python success_demo.py
-
-# Run text output investigation
-python test_text_output.py
-
-# Run comprehensive test suite
-pytest tests/
-
-# Run with coverage
-pytest --cov=dtc_api_sdk tests/
-```
-
-## 📈 Performance Tips
-
-1. **Use appropriate thread counts** (1-16) based on your data size
-2. **Batch file uploads** for better performance
-3. **Monitor task progress** to avoid timeouts
-4. **Validate configurations** before submitting
-5. **Use tasks for one-off operations**, pipelines for continuous processing
+- [Architecture Guide](docs/ARCHITECTURE.md) - Detailed technical architecture
+- [API Reference](docs/API_REFERENCE.md) - Complete API documentation
+- [User Guide](docs/USER_GUIDE.md) - Step-by-step usage guide
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🔗 Links
-
-- **API Documentation**: [docs/API_REFERENCE.md](docs/API_REFERENCE.md)
-- **User Guide**: [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
-- **Architecture**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- **Examples**: [examples/](examples/)
-- **Tests**: [tests/](tests/)
-- **PyPI Package**: [https://pypi.org/project/dtc-api-sdk/](https://pypi.org/project/dtc-api-sdk/)
-- **Issues**: [GitHub Issues](https://github.com/aparavi/dtc-api-sdk/issues)
-
 ## 🆘 Support
 
-- **Documentation**: Complete API reference and user guide
-- **Examples**: Practical usage examples in the `examples/` directory
+- **Documentation**: Check the `docs/` directory for detailed guides
 - **Issues**: Report bugs and request features via GitHub Issues
-- **Community**: Join our developer community for support and discussions
+- **Examples**: See `examples/` directory for working code samples
+
+## 🏷️ Version History
+
+- **v1.2.0** - Enhanced webhook processing with robust error handling and timeout management
+- **v1.1.0** - Added comprehensive pipeline support and improved error handling
+- **v1.0.0** - Initial release with basic API functionality
 
 ---
 
-**Happy processing with the Aparavi Data Toolchain API SDK!** 🎉
+**Ready to extract data from your documents?** Start with the webhook processing example above! 🚀
