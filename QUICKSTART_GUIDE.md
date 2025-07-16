@@ -13,7 +13,7 @@ Get up and running with document processing in 5 minutes! 🚀
 ### 1. Install Dependencies
 
 ```bash
-git clone https://github.com/your-org/dtc-api-sdk.git
+git clone https://github.com/AparaviSoftware/dtc-api-sdk.git
 cd dtc-api-sdk
 pip install -r requirements.txt
 ```
