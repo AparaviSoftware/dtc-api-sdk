@@ -1,0 +1,15 @@
+{
+  "status": "OK",
+  "data": {
+    "objectsRequested": 0,
+    "objectsCompleted": 0,
+    "types": {},
+    "objects": {}
+  },
+  "metrics": {
+    "cpu": 224.242,
+    "output": 162,
+    "total_time": 224.249,
+    "requests": 1
+  }
+}

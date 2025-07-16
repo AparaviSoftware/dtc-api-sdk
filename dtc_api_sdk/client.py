@@ -4,6 +4,7 @@ Main API client for the Aparavi Data Toolchain API.
 
 import os
 import json
+import mimetypes
 from typing import Dict, Any, Optional, List, Union
 from pathlib import Path
 import requests
@@ -459,6 +460,87 @@ class DTCApiClient:
         else:
             # If response is not a dict, wrap it in a dict
             return {"response": response.data, "status": "received"}
+    
+    def upload_file_to_webhook(self, token: str, file_path: Union[str, Path], 
+                              content_type: str = None, timeout: int = 60) -> Dict[str, Any]:
+        """
+        Upload a file directly to a webhook endpoint for processing.
+        
+        This method handles direct file upload to the webhook endpoint, which is the
+        preferred method for document processing as it uploads the file as binary data
+        rather than JSON with base64 encoding.
+        
+        Args:
+            token: Task token from execute_task()
+            file_path: Path to the file to upload
+            content_type: MIME type of the file (auto-detected if not provided)
+            timeout: Request timeout in seconds (default: 60)
+            
+        Returns:
+            Webhook response data with processed results
+            
+        Raises:
+            FileNotFoundError: If the specified file doesn't exist
+            DTCApiError: For API errors
+            NetworkError: For connection issues
+            
+        Example:
+            >>> client = DTCApiClient()
+            >>> task_token = client.execute_task(pipeline_config)
+            >>> result = client.upload_file_to_webhook(task_token, "document.pdf")
+        """
+        file_path = Path(file_path)
+        if not file_path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+        
+        # Auto-detect content type if not provided
+        if content_type is None:
+            content_type, _ = mimetypes.guess_type(str(file_path))
+            if content_type is None:
+                content_type = "application/octet-stream"
+        
+        # Construct webhook URL with required parameters
+        webhook_url = f"{self.base_url}/webhook"
+        params = {
+            'type': 'cpu',
+            'apikey': self.api_key,
+            'token': token
+        }
+        
+        # Prepare headers for direct file upload
+        headers = {
+            'Authorization': self.api_key,  # No Bearer prefix for webhook
+            'Content-Type': content_type
+        }
+        
+        try:
+            # Upload file directly as binary data
+            with open(file_path, 'rb') as file:
+                response = requests.put(
+                    webhook_url,
+                    params=params,
+                    headers=headers,
+                    data=file,
+                    timeout=timeout
+                )
+            
+            # Handle response
+            response.raise_for_status()
+            
+            try:
+                return response.json()
+            except json.JSONDecodeError:
+                # If response is not JSON, wrap it in a dict
+                return {"response": response.text, "status": "received"}
+                
+        except requests.exceptions.Timeout:
+            raise NetworkError(f"File upload timed out after {timeout} seconds")
+        except requests.exceptions.ConnectionError as e:
+            raise NetworkError(f"Connection error during file upload: {str(e)}")
+        except requests.exceptions.HTTPError as e:
+            raise DTCApiError(f"HTTP error during file upload: {str(e)}")
+        except requests.exceptions.RequestException as e:
+            raise DTCApiError(f"Request failed during file upload: {str(e)}")
     
     def get_chat_url(self, token: str, pipeline_type: str, api_key: str = None) -> str:
         """

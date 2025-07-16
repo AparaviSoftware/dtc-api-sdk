@@ -205,3 +205,15 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Large test data files
+test_data/*.mp4
+test_data/*.mov
+test_data/*.avi
+test_data/*.mkv
+test_data/*.wmv
+test_data/*.flv
+test_data/*.webm
+# Files larger than 100MB
+**/[Qq]&[Aa]*.mp4
+**/*[Mm]eeting*.[Mm]p4

@@ -1,0 +1,52 @@
+{
+  "status": "OK",
+  "processing_time": 3.946963,
+  "objects_processed": 1,
+  "extracted_text": "First and Last Name\tSSN\tCredit Card Number\tFirst and Last Name\tSSN\tCredit Card Number\tFirst and Last Name\tSSN\tCredit Card Number\tFirst and Last Name\tSSN\tCredit Card Number\tFirst and Last Name\tSSN\tCredit Card Number\tFirst and Last Name\tSSN\tCredit Card Number\n\t\tVisa MC AMEX\t\t\tVisa MC AMEX\t\t\tVisa MC AMEX\t\t\tVisa MC AMEX\t\t\tVisa MC AMEX\t\t\tVisa MC AMEX\nRobert\u00a0Aragon\t489-36-8350\t4929-3813-3266-4295\tRobert\u00a0Aragon\t489-36-8351\t4929-3813-3266-4296\tRobert\u00a0Aragon\t489-36-8352\t4929-3813-3266-4297\tRobert\u00a0Aragon\t489-36-8353\t4929-3813-3266-4298\tRobert\u00a0Aragon\t489-36-8354\t4929-3813-3266-4299\tRobert\u00a0Aragon\t489-36-8355\t4929-3813-3266-4300\nAshley\u00a0Borden\t514-14-8905\t5370-4638-8881-3020\tAshley\u00a0Borden\t514-14-8906\t5370-4638-8881-3021\tAshley\u00a0Borden\t514-14-8907\t5370-4638-8881-3022\tAshley\u00a0Borden\t514-14-8908\t5370-4638-8881-3023\tAshley\u00a0Borden\t514-14-8909\t5370-4638-8881-3024\tAshley\u00a0Borden\t514-14-8910\t5370-4638-8881-3025\nThomas\u00a0Conley\t690-05-5315\t4916-4811-5814-8111\tThomas\u00a0Conley\t690-05-5316\t4916-4811-5814-8112\tThomas\u00a0Conley\t690-05-5317\t4916-4811-5814-8113\tThomas\u00a0Conley\t690-05-5318\t4916-4811-5814-8114\tThomas\u00a0Conley\t690-05-5319\t4916-4811-5814-8115\tThomas\u00a0Conley\t690-05-5320\t4916-4811-5814-8116\nSusan\u00a0Davis\t421-37-1396\t4916-4034-9269-8783\tSusan\u00a0Davis\t421-37-1397\t4916-4034-9269-8784\tSusan\u00a0Davis\t421-37-1398\t4916-4034-9269-8785\tSusan\u00a0Davis\t421-37-1399\t4916-4034-9269-8786\tSusan\u00a0Davis\t421-37-1400\t4916-4034-9269-8787\tSusan\u00a0Davis\t421-37-1401\t4916-4034-9269-8788\nChristopher\u00a0Diaz\t458-02-6124\t5299-1561-5689-1938\tChristopher\u00a0Diaz\t458-02-6125\t5299-1561-5689-1939\tChristopher\u00a0Diaz\t458-02-6126\t5299-1561-5689-1940\tChristopher\u00a0Diaz\t458-02-6127\t5299-1561-5689-1941\tChristopher\u00a0Diaz\t458-02-6128\t5299-1561-5689-1942\tChristopher\u00a0Diaz\t458-02-6129\t5299-1561-5689-1943\nRick\u00a0Edwards\t612-20-6832\t5293-8502-0071-3058\tRick\u00a0Edwards\t612-20-6833\t5293-8502-0071-3059\tRick\u00a0Edwards\t612-20-6834\t5293-8502-0071-3060\tRick\u00a0Edwards\t612-20-6835\t5293-8502-0071-3061\tRick\u00a0Edwards\t612-20-6836\t5293-8502-0071-3062\tRick\u00a0Edwards\t612-20-6837\t5293-8502-0071-3063\nVictor\u00a0Faulkner\t300-62-3266\t5548-0246-6336-5664\tVictor\u00a0Faulkner\t300-62-3267\t5548-0246-6336-5665\tVictor\u00a0Faulkner\t300-62-3268\t5548-0246-6336-5666\tVictor\u00a0Faulkner\t300-62-3269\t5548-0246-6336-5667\tVictor\u00a0Faulkner\t300-62-3270\t5548-0246-6336-5668\tVictor\u00a0Faulkner\t300-62-3271\t5548-0246-6336-5669\nLisa\u00a0Garrison\t660-03-8360\t4539-5385-7425-5825\tLisa\u00a0Garrison\t660-03-8361\t4539-5385-7425-5826\tLisa\u00a0Garrison\t660-03-8362\t4539-5385-7425-5827\tLisa\u00a0Garrison\t660-03-8363\t4539-5385-7425-5828\tLisa\u00a0Garrison\t660-03-8364\t4539-5385-7425-5829\tLisa\u00a0Garrison\t660-03-8365\t4539-5385-7425-5830\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+  "metadata": {
+    "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "cp:revision": "3",
+    "dc:creator": "Brian Hileman",
+    "dc:modifier": "Brian Hileman",
+    "dc:publisher": "bewglobal",
+    "dcterms:created": "2017-04-27T17:44:00Z",
+    "dcterms:modified": "2017-04-27T17:46:00Z",
+    "xmpTPg:NPages": "1"
+  },
+  "full_response": {
+    "status": "OK",
+    "data": {
+      "objectsRequested": 1,
+      "objectsCompleted": 1,
+      "types": {},
+      "objects": {
+        "1538f1b0-4a37-5620-896f-cee1e77aea79": {
+          "__types": {
+            "text": "text"
+          },
+          "metadata": {
+            "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "cp:revision": "3",
+            "dc:creator": "Brian Hileman",
+            "dc:modifier": "Brian Hileman",
+            "dc:publisher": "bewglobal",
+            "dcterms:created": "2017-04-27T17:44:00Z",
+            "dcterms:modified": "2017-04-27T17:46:00Z",
+            "xmpTPg:NPages": "1"
+          },
+          "name": "1043b142-031b-47f7-bfa5-517fef85db6c",
+          "path": "1043b142-031b-47f7-bfa5-517fef85db6c",
+          "text": [
+            "First and Last Name\tSSN\tCredit Card Number\tFirst and Last Name\tSSN\tCredit Card Number\tFirst and Last Name\tSSN\tCredit Card Number\tFirst and Last Name\tSSN\tCredit Card Number\tFirst and Last Name\tSSN\tCredit Card Number\tFirst and Last Name\tSSN\tCredit Card Number\n\t\tVisa MC AMEX\t\t\tVisa MC AMEX\t\t\tVisa MC AMEX\t\t\tVisa MC AMEX\t\t\tVisa MC AMEX\t\t\tVisa MC AMEX\nRobert\u00a0Aragon\t489-36-8350\t4929-3813-3266-4295\tRobert\u00a0Aragon\t489-36-8351\t4929-3813-3266-4296\tRobert\u00a0Aragon\t489-36-8352\t4929-3813-3266-4297\tRobert\u00a0Aragon\t489-36-8353\t4929-3813-3266-4298\tRobert\u00a0Aragon\t489-36-8354\t4929-3813-3266-4299\tRobert\u00a0Aragon\t489-36-8355\t4929-3813-3266-4300\nAshley\u00a0Borden\t514-14-8905\t5370-4638-8881-3020\tAshley\u00a0Borden\t514-14-8906\t5370-4638-8881-3021\tAshley\u00a0Borden\t514-14-8907\t5370-4638-8881-3022\tAshley\u00a0Borden\t514-14-8908\t5370-4638-8881-3023\tAshley\u00a0Borden\t514-14-8909\t5370-4638-8881-3024\tAshley\u00a0Borden\t514-14-8910\t5370-4638-8881-3025\nThomas\u00a0Conley\t690-05-5315\t4916-4811-5814-8111\tThomas\u00a0Conley\t690-05-5316\t4916-4811-5814-8112\tThomas\u00a0Conley\t690-05-5317\t4916-4811-5814-8113\tThomas\u00a0Conley\t690-05-5318\t4916-4811-5814-8114\tThomas\u00a0Conley\t690-05-5319\t4916-4811-5814-8115\tThomas\u00a0Conley\t690-05-5320\t4916-4811-5814-8116\nSusan\u00a0Davis\t421-37-1396\t4916-4034-9269-8783\tSusan\u00a0Davis\t421-37-1397\t4916-4034-9269-8784\tSusan\u00a0Davis\t421-37-1398\t4916-4034-9269-8785\tSusan\u00a0Davis\t421-37-1399\t4916-4034-9269-8786\tSusan\u00a0Davis\t421-37-1400\t4916-4034-9269-8787\tSusan\u00a0Davis\t421-37-1401\t4916-4034-9269-8788\nChristopher\u00a0Diaz\t458-02-6124\t5299-1561-5689-1938\tChristopher\u00a0Diaz\t458-02-6125\t5299-1561-5689-1939\tChristopher\u00a0Diaz\t458-02-6126\t5299-1561-5689-1940\tChristopher\u00a0Diaz\t458-02-6127\t5299-1561-5689-1941\tChristopher\u00a0Diaz\t458-02-6128\t5299-1561-5689-1942\tChristopher\u00a0Diaz\t458-02-6129\t5299-1561-5689-1943\nRick\u00a0Edwards\t612-20-6832\t5293-8502-0071-3058\tRick\u00a0Edwards\t612-20-6833\t5293-8502-0071-3059\tRick\u00a0Edwards\t612-20-6834\t5293-8502-0071-3060\tRick\u00a0Edwards\t612-20-6835\t5293-8502-0071-3061\tRick\u00a0Edwards\t612-20-6836\t5293-8502-0071-3062\tRick\u00a0Edwards\t612-20-6837\t5293-8502-0071-3063\nVictor\u00a0Faulkner\t300-62-3266\t5548-0246-6336-5664\tVictor\u00a0Faulkner\t300-62-3267\t5548-0246-6336-5665\tVictor\u00a0Faulkner\t300-62-3268\t5548-0246-6336-5666\tVictor\u00a0Faulkner\t300-62-3269\t5548-0246-6336-5667\tVictor\u00a0Faulkner\t300-62-3270\t5548-0246-6336-5668\tVictor\u00a0Faulkner\t300-62-3271\t5548-0246-6336-5669\nLisa\u00a0Garrison\t660-03-8360\t4539-5385-7425-5825\tLisa\u00a0Garrison\t660-03-8361\t4539-5385-7425-5826\tLisa\u00a0Garrison\t660-03-8362\t4539-5385-7425-5827\tLisa\u00a0Garrison\t660-03-8363\t4539-5385-7425-5828\tLisa\u00a0Garrison\t660-03-8364\t4539-5385-7425-5829\tLisa\u00a0Garrison\t660-03-8365\t4539-5385-7425-5830\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+          ]
+        }
+      }
+    },
+    "metrics": {
+      "cpu": 3946.956,
+      "output": 3530,
+      "total_time": 3946.963,
+      "requests": 1
+    }
+  }
+}
