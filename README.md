@@ -97,6 +97,7 @@ print(f"Processing result: {result}")
 ### Core Guides
 - **[📖 Document Processing Flow](docs/PDF_PROCESSING_PIPELINE_GUIDE.md)** - Complete API flow sequence and SDK methods
 - **[📖 Pipeline vs Task Workflows](docs/PIPE_VS_TASK_WORKFLOWS.md)** - When to use each processing approach
+- **[🏗️ SDK Architecture](docs/SDK_ARCHITECTURE.md)** - Technical architecture with detailed Mermaid diagrams
 - **[📖 API Documentation](open_api_docs/API_DOCUMENTATION.md)** - Complete endpoint reference
 - **[📖 OpenAPI Specification](open_api_docs/openapi.json)** - Machine-readable API spec
 
