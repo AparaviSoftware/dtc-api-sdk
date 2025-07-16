@@ -13,76 +13,29 @@ A comprehensive Python SDK for the Aparavi Data Toolchain (DTC) API that provide
 
 *Run these notebooks locally or in your favorite Jupyter environment!*
 
-## 🏗️ Architecture Overview
+## 🏗️ Python SDK Structure
 
-```mermaid
-graph TB
-    %% Client Applications
-    subgraph Apps ["Client Applications"]
-        SDK[Python SDK]
-        CLI[CLI Examples]
-        WEB[Web Interface]
-        API[Direct API Calls]
-    end
-    
-    %% SDK Components
-    subgraph SDKComp ["DTC API SDK"]
-        CLIENT[DTCApiClient]
-        MODELS[Data Models]
-        EXCEPTIONS[Exception Handlers]
-        METHODS[SDK Methods]
-    end
-    
-    %% API Endpoints
-    subgraph APIEnd ["DTC API Endpoints"]
-        HEALTH[Health Endpoints]
-        PIPE[Pipeline Management]
-        TASK[Task Management]
-        UI[User Interface]
-    end
-    
-    %% Specific Endpoints
-    subgraph HealthEnd ["Health Endpoints"]
-        VERSION["/version"]
-        STATUS["/status"]
-        SERVICES["/services"]
-    end
-    
-    subgraph PipeMgmt ["Pipeline Management"]
-        VALIDATE["/pipe/validate"]
-        CREATE["/pipe POST"]
-        DELETE["/pipe DELETE"]
-        PROCESS["/pipe/process"]
-    end
-    
-    subgraph TaskMgmt ["Task Management"]
-        EXECUTE["/task PUT"]
-        TASKSTATUS["/task GET"]
-        CANCEL["/task DELETE"]
-    end
-    
-    subgraph UserInt ["User Interface"]
-        WEBHOOK["/webhook"]
-        CHAT["/chat"]
-        DROPPER["/dropper"]
-    end
-    
-    %% Basic Connections
-    SDK --> CLIENT
-    CLIENT --> METHODS
-    METHODS --> HEALTH
-    METHODS --> PIPE
-    METHODS --> TASK
-    METHODS --> UI
-    
-    %% Method to Endpoint Mapping
-    CLIENT --> EXECUTE
-    CLIENT --> WEBHOOK
-    CLIENT --> CREATE
-    CLIENT --> VALIDATE
-    CLIENT --> VERSION
-    CLIENT --> STATUS
-    CLIENT --> SERVICES
+The DTC API SDK provides a simple, unified interface to the document processing API:
+
+```python
+from dtc_api_sdk.client import DTCApiClient
+
+# One client handles everything
+client = DTCApiClient()
+
+# System health & info
+client.get_version()
+client.get_status()
+client.get_services()
+
+# Task-based processing (recommended)
+task_token = client.execute_task(pipeline_config)
+result = client.upload_file_to_webhook(task_token, "document.pdf")
+
+# Pipeline management (for web apps)
+pipeline_token = client.create_pipeline(pipeline_config)
+result = client.process_pipeline(pipeline_token, "document.pdf")
+client.delete_pipeline(pipeline_token)
 ```
 
 ## 🚀 Quick Start
@@ -90,6 +43,8 @@ graph TB
 ### Installation
 
 ```bash
+git clone https://github.com/your-org/dtc-api-sdk.git
+cd dtc-api-sdk
 pip install -r requirements.txt
 ```
 
